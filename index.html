@@ -1,182 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Hyper Ride</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: 'Arial', sans-serif;
-            background-color: #121212;
-            color: #f0f0f0;
-        }
-        header {
-            background-color: #1a1a1a;
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid #ff4d00;
-        }
-        header h1 {
-            margin: 0;
-            color: #ff4d00;
-        }
-        nav {
-            display: flex;
-            justify-content: center;
-            background-color: #1a1a1a;
-            padding: 10px 0;
-            border-bottom: 1px solid #333;
-        }
-        nav a {
-            color: #f0f0f0;
-            text-decoration: none;
-            margin: 0 15px;
-            font-weight: bold;
-        }
-        nav a:hover {
-            color: #ff4d00;
-        }
-        section {
-            padding: 40px 20px;
-            max-width: 1000px;
-            margin: auto;
-        }
-        h2 {
-            color: #ff4d00;
-        }
-        .card {
-            background-color: #1f1f1f;
-            padding: 20px;
-            margin: 20px 0;
-            border-radius: 8px;
-        }
-        .card a {
-            color: #ff4d00;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .card a:hover {
-            text-decoration: underline;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-            border-top: 1px solid #333;
-            color: #888;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Glitch Runner</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#010116; font-family:monospace; color:#fff;}
+  canvas { display:block; background:#010116; }
+  #ui { position:absolute; top:10px; left:10px; z-index:10; }
+  #ui div { margin-bottom:4px; }
+  button { background:#222; color:#0ff; border:none; padding:6px 10px; cursor:pointer; border-radius:6px; margin-right:4px; }
+</style>
 </head>
 <body>
+<canvas id="game"></canvas>
+<div id="ui">
+  <div>Score: <span id="score">0</span></div>
+  <div>Zone: <span id="zone">Normal</span></div>
+  <button id="startBtn">Start</button>
+  <button id="jumpBtn">Jump</button>
+</div>
 
-    <header>
-        <h1>My Hyper Ride</h1>
-        <p>Your ultimate hub for cars, tech, and reviews</p>
-    </header>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = window.innerWidth;
+let H = canvas.height = window.innerHeight;
 
-    <nav>
-        <a href="#cars">Cars</a>
-        <a href="#tech">Tech</a>
-        <a href="#reviews">Reviews</a>
-    </nav>
+window.addEventListener('resize', ()=>{
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+});
 
-    <!-- Cars Section -->
-    <section id="cars">
-        <h2>Cars</h2>
+const zones = [
+  {name:'Normal', gravity:0.6, speedMult:1},
+  {name:'Slow Motion', gravity:0.6, speedMult:0.3},
+  {name:'Fast Forward', gravity:0.6, speedMult:2},
+  {name:'Reverse Time', gravity:0.6, speedMult:1, reverse:true},
+  {name:'Zero Gravity', gravity:0, speedMult:1},
+  {name:'Broken Reality', gravity:0.6, speedMult:1, glitch:true}
+];
 
-        <div class="card">
-            <h3>Lamborghini Aventador</h3>
-            <p>The Aventador is a beast on the road, with insane speed and futuristic design.</p>
-            <a href="car1.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Ferrari F8 Tributo</h3>
-            <p>Speed, design, and tech compared to Aventador.</p>
-            <a href="car2.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>McLaren 720S</h3>
-            <p>Aerodynamics and acceleration meet style and luxury.</p>
-            <a href="car3.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Porsche 911 Turbo S</h3>
-            <p>Classic sports car with modern performance and tech.</p>
-            <a href="car4.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Bugatti Chiron</h3>
-            <p>The ultimate hypercar experience, unmatched speed and engineering.</p>
-            <a href="car5.html">Read More →</a>
-        </div>
-    </section>
+let currentZone = zones[0];
+let player, platforms, enemies, clones;
+let score=0, running=false, lastTime=0, zoneTimer=0, zoneDuration=7000;
 
-    <!-- Tech Section -->
-    <section id="tech">
-        <h2>Tech</h2>
+// Player object
+function initPlayer(){
+  player = { x:100, y:H-120, w:30, h:50, vy:0, jumpPower:-14, alive:true, color:'#0ff' };
+}
 
-        <div class="card">
-            <h3>iPhone 17 vs Samsung S25</h3>
-            <p>Compare display, performance, battery, and camera features of the latest flagship phones.</p>
-            <a href="tech1.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>MacBook Pro 2025 vs Lenovo Ideapad Gen 10</h3>
-            <p>Which laptop is better for performance and portability?</p>
-            <a href="tech2.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Apple Watch Ultra vs Samsung Galaxy Watch 7</h3>
-            <p>Fitness, battery life, and smart features comparison.</p>
-            <a href="tech3.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>iPad Air 6th Gen vs Samsung Tab S9</h3>
-            <p>Best tablet for students and professionals in 2025.</p>
-            <a href="tech4.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Top 5 Gaming Laptops 2025</h3>
-            <p>Which laptops dominate performance, display, and cooling?</p>
-            <a href="tech5.html">Read More →</a>
-        </div>
-    </section>
+// Platforms
+function initPlatforms(){
+  platforms = [];
+  for(let i=0;i<20;i++){
+    platforms.push({x:i*200, y:H-80, w:200, h:20});
+  }
+}
 
-    <!-- Reviews Section -->
-    <section id="reviews">
-        <h2>Reviews</h2>
+// Enemies
+function initEnemies(){ enemies=[]; clones=[]; }
 
-        <div class="card">
-            <h3>Hypercar Event 2025</h3>
-            <p>Our detailed review of the latest hypercar showcase.</p>
-            <a href="review1.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Top Tech Gadgets 2025</h3>
-            <p>The ultimate review of must-have tech for this year.</p>
-            <a href="review2.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Best Electric Cars 2025</h3>
-            <p>From Tesla to Rivian — performance, range, and tech reviewed.</p>
-            <a href="review3.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Smart Home Devices</h3>
-            <p>Voice assistants, cameras, and smart lights tested.</p>
-            <a href="review4.html">Read More →</a>
-        </div>
-        <div class="card">
-            <h3>Top 10 Mobile Games 2025</h3>
-            <p>The best mobile games you must play this year.</p>
-            <a href="review5.html">Read More →</a>
-        </div>
+// Random zone switch
+function switchZone(){
+  currentZone = zones[Math.floor(Math.random()*zones.length)];
+  document.getElementById('zone').textContent = currentZone.name;
+  if(currentZone.reverse){
+    // create clones of previous player path
+    clones = [];
+    for(let i=0;i<platforms.length;i+=3){
+      clones.push({x:platforms[i].x, y:platforms[i].y-50, w:player.w, h:player.h});
+    }
+  }
+}
 
-    </section>
+// Game reset
+function resetGame(){
+  initPlayer();
+  initPlatforms();
+  initEnemies();
+  score=0;
+  zoneTimer = performance.now();
+  lastTime = performance.now();
+  running=true;
+}
 
-    <footer>
-        &copy; 2025 My Hyper Ride | Designed by Neil
-    </footer>
+// Input
+let jumping=false;
+document.getElementById('jumpBtn').addEventListener('click', ()=>{ jumping=true; });
+window.addEventListener('keydown', e=>{ if(e.code==='Space') jumping=true; });
+window.addEventListener('keyup', e=>{ if(e.code==='Space') jumping=false; });
 
+// Game loop
+function loop(timestamp){
+  const dt = timestamp - lastTime;
+  lastTime = timestamp;
+  if(!running){ requestAnimationFrame(loop); return; }
+
+  ctx.clearRect(0,0,W,H);
+
+  // Zone timer
+  if(timestamp - zoneTimer > zoneDuration){
+    switchZone();
+    zoneTimer = timestamp;
+  }
+
+  // Player physics
+  if(jumping && player.vy===0){ player.vy = player.jumpPower; jumping=false; }
+  player.vy += currentZone.gravity;
+  player.y += player.vy;
+  if(player.y + player.h > H-80){ player.y = H-80-player.h; player.vy=0; }
+
+  // Platform scroll
+  const scrollSpeed = 6 * currentZone.speedMult;
+  for(const p of platforms){ p.x -= scrollSpeed; }
+  if(platforms[0].x + platforms[0].w < 0){ platforms.push(platforms.shift()); platforms[platforms.length-1].x = platforms[platforms.length-2].x + 200; }
+
+  // Draw platforms
+  ctx.fillStyle = '#111';
+  for(const p of platforms){
+    ctx.fillRect(p.x,p.y,p.w,p.h);
+  }
+
+  // Draw player
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x,player.y,player.w,player.h);
+
+  // Reverse clones
+  if(currentZone.reverse){
+    ctx.fillStyle = '#f0f';
+    for(const c of clones){ 
+      c.x += scrollSpeed; 
+      ctx.fillRect(c.x,c.y,c.w,c.h); 
+      if(circIntersect(player,c)){ player.alive=false; running=false; alert('Game Over! Score: '+Math.floor(score)); }
+    }
+  }
+
+  // Broken Reality effect
+  if(currentZone.glitch && Math.random()<0.1){
+    ctx.fillStyle='#0ff';
+    ctx.fillRect(Math.random()*W,Math.random()*H, Math.random()*20+10, Math.random()*20+10);
+  }
+
+  // Update score
+  score += dt * 0.01 * currentZone.speedMult;
+  document.getElementById('score').textContent = Math.floor(score);
+
+  requestAnimationFrame(loop);
+}
+
+// Collision helper
+function circIntersect(a,b){
+  return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+}
+
+// Start button
+document.getElementById('startBtn').addEventListener('click', ()=>{ resetGame(); });
+
+loop(performance.now());
+</script>
 </body>
 </html>
