@@ -1,163 +1,148 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Time Glitch Runner</title>
+<title>Gravity Shift Runner</title>
 <style>
-  html, body { margin:0; padding:0; overflow:hidden; background:#010116; font-family:monospace; color:#fff;}
-  canvas { display:block; background:#010116; }
-  #ui { position:absolute; top:10px; left:10px; z-index:10; }
-  #ui div { margin-bottom:4px; }
-  button { background:#222; color:#0ff; border:none; padding:6px 10px; cursor:pointer; border-radius:6px; margin-right:4px; }
+  body { margin:0; overflow:hidden; background:#000; font-family:monospace; }
+  #scoreBox { position:absolute; top:10px; left:10px; color:#0ff; font-size:22px; }
+  canvas { display:block; }
 </style>
 </head>
 <body>
+<div id="scoreBox">Score: <span id="score">0</span></div>
 <canvas id="game"></canvas>
-<div id="ui">
-  <div>Score: <span id="score">0</span></div>
-  <div>Zone: <span id="zone">Normal</span></div>
-  <button id="startBtn">Start</button>
-  <button id="jumpBtn">Jump</button>
-</div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
 let W = canvas.width = window.innerWidth;
 let H = canvas.height = window.innerHeight;
 
-window.addEventListener('resize', ()=>{
+window.onresize = () => {
   W = canvas.width = window.innerWidth;
   H = canvas.height = window.innerHeight;
-});
+};
 
-const zones = [
-  {name:'Normal', gravity:0.6, speedMult:1},
-  {name:'Slow Motion', gravity:0.6, speedMult:0.3},
-  {name:'Fast Forward', gravity:0.6, speedMult:2},
-  {name:'Reverse Time', gravity:0.6, speedMult:1, reverse:true},
-  {name:'Zero Gravity', gravity:0, speedMult:1},
-  {name:'Broken Reality', gravity:0.6, speedMult:1, glitch:true}
-];
+// Player
+let player = {
+  x: 120,
+  y: H - 150,
+  w: 50,
+  h: 50,
+  gravityDirection: 1, // 1 = down, -1 = up
+};
 
-let currentZone = zones[0];
-let player, platforms, enemies, clones;
-let score=0, running=false, lastTime=0, zoneTimer=0, zoneDuration=7000;
+// Obstacles
+let obstacles = [];
+let speed = 9;
+let score = 0;
+let gameOver = false;
 
-// Player object
-function initPlayer(){
-  player = { x:100, y:H-120, w:30, h:50, vy:0, jumpPower:-14, alive:true, color:'#0ff' };
+// Spawn obstacles on ceiling or floor
+function spawnObstacle() {
+  const height = 60;
+  const lane = Math.random() < 0.5 ? "floor" : "ceiling";
+
+  obstacles.push({
+    x: W + 50,
+    y: lane === "floor" ? H - 100 - height : 100,
+    w: 50 + Math.random() * 30,
+    h: height,
+    lane
+  });
 }
 
-// Platforms
-function initPlatforms(){
-  platforms = [];
-  for(let i=0;i<20;i++){
-    platforms.push({x:i*200, y:H-80, w:200, h:20});
-  }
+setInterval(spawnObstacle, 1200);
+
+// Reset
+function reset() {
+  obstacles = [];
+  speed = 9;
+  score = 0;
+  player.y = H - 150;
+  player.gravityDirection = 1;
+  gameOver = false;
 }
 
-// Enemies
-function initEnemies(){ enemies=[]; clones=[]; }
+// Update logic
+function update() {
+  if (gameOver) return;
 
-// Random zone switch
-function switchZone(){
-  currentZone = zones[Math.floor(Math.random()*zones.length)];
-  document.getElementById('zone').textContent = currentZone.name;
-  if(currentZone.reverse){
-    // create clones of previous player path
-    clones = [];
-    for(let i=0;i<platforms.length;i+=3){
-      clones.push({x:platforms[i].x, y:platforms[i].y-50, w:player.w, h:player.h});
+  // Move player to correct lane
+  if (player.gravityDirection === 1) {
+    // Fall down
+    player.y += 20;
+    if (player.y + player.h > H - 100) {
+      player.y = H - 100 - player.h;
     }
-  }
-}
-
-// Game reset
-function resetGame(){
-  initPlayer();
-  initPlatforms();
-  initEnemies();
-  score=0;
-  zoneTimer = performance.now();
-  lastTime = performance.now();
-  running=true;
-}
-
-// Input
-let jumping=false;
-document.getElementById('jumpBtn').addEventListener('click', ()=>{ jumping=true; });
-window.addEventListener('keydown', e=>{ if(e.code==='Space') jumping=true; });
-window.addEventListener('keyup', e=>{ if(e.code==='Space') jumping=false; });
-
-// Game loop
-function loop(timestamp){
-  const dt = timestamp - lastTime;
-  lastTime = timestamp;
-  if(!running){ requestAnimationFrame(loop); return; }
-
-  ctx.clearRect(0,0,W,H);
-
-  // Zone timer
-  if(timestamp - zoneTimer > zoneDuration){
-    switchZone();
-    zoneTimer = timestamp;
-  }
-
-  // Player physics
-  if(jumping && player.vy===0){ player.vy = player.jumpPower; jumping=false; }
-  player.vy += currentZone.gravity;
-  player.y += player.vy;
-  if(player.y + player.h > H-80){ player.y = H-80-player.h; player.vy=0; }
-
-  // Platform scroll
-  const scrollSpeed = 6 * currentZone.speedMult;
-  for(const p of platforms){ p.x -= scrollSpeed; }
-  if(platforms[0].x + platforms[0].w < 0){ platforms.push(platforms.shift()); platforms[platforms.length-1].x = platforms[platforms.length-2].x + 200; }
-
-  // Draw platforms
-  ctx.fillStyle = '#111';
-  for(const p of platforms){
-    ctx.fillRect(p.x,p.y,p.w,p.h);
-  }
-
-  // Draw player
-  ctx.fillStyle = player.color;
-  ctx.fillRect(player.x,player.y,player.w,player.h);
-
-  // Reverse clones
-  if(currentZone.reverse){
-    ctx.fillStyle = '#f0f';
-    for(const c of clones){ 
-      c.x += scrollSpeed; 
-      ctx.fillRect(c.x,c.y,c.w,c.h); 
-      if(circIntersect(player,c)){ player.alive=false; running=false; alert('Game Over! Score: '+Math.floor(score)); }
+  } else {
+    // Fall up
+    player.y -= 20;
+    if (player.y < 100) {
+      player.y = 100;
     }
   }
 
-  // Broken Reality effect
-  if(currentZone.glitch && Math.random()<0.1){
-    ctx.fillStyle='#0ff';
-    ctx.fillRect(Math.random()*W,Math.random()*H, Math.random()*20+10, Math.random()*20+10);
+  // Move obstacles
+  for (let o of obstacles) {
+    o.x -= speed;
   }
 
-  // Update score
-  score += dt * 0.01 * currentZone.speedMult;
-  document.getElementById('score').textContent = Math.floor(score);
+  // Remove off-screen
+  obstacles = obstacles.filter(o => o.x + o.w > 0);
 
+  // Collision
+  for (let o of obstacles) {
+    if (player.x < o.x + o.w &&
+        player.x + player.w > o.x &&
+        player.y < o.y + o.h &&
+        player.y + player.h > o.y) {
+      alert("GAME OVER! Score: " + Math.floor(score));
+      reset();
+      return;
+    }
+  }
+
+  speed += 0.003;
+  score += 0.1;
+  document.getElementById("score").textContent = Math.floor(score);
+}
+
+// Draw
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Top + Bottom run bars
+  ctx.fillStyle = "#044";
+  ctx.fillRect(0, 100, W, 5);
+  ctx.fillRect(0, H - 100, W, 5);
+
+  // Player
+  ctx.fillStyle = "#0ff";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // Obstacles
+  ctx.fillStyle = "#f0f";
+  for (let o of obstacles) {
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+  }
+}
+
+function loop() {
+  update();
+  draw();
   requestAnimationFrame(loop);
 }
+loop();
 
-// Collision helper
-function circIntersect(a,b){
-  return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
-}
-
-// Start button
-document.getElementById('startBtn').addEventListener('click', ()=>{ resetGame(); });
-
-loop(performance.now());
+// Controls
+window.addEventListener("keydown", e => {
+  if (e.code === "Space") {
+    player.gravityDirection *= -1; // Flip gravity
+  }
+});
 </script>
 </body>
 </html>
