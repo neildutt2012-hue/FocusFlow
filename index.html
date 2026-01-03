@@ -3,10 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <!-- Google Site Verification -->
 <meta name="google-site-verification" content="eUJgkTyjOwyYw3dpxvxVgqwI1Q5QYpY0n-eKOGdR86Y" />
+
+<!-- SEO Meta Tags -->
+<meta name="description" content="FocusFlow by NeonStar: Study timer, task planner, and gamified productivity app for students. Track focus, earn XP, build streaks, and master your time.">
+<meta name="keywords" content="FocusFlow, NeonStar, focus app, study timer, productivity, gamified productivity, task planner, student focus, XP, streaks, Pomodoro">
+
 <title>FocusFlow | NeonStar</title>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
 <style>
 /* Reset & Body */
 * {margin:0; padding:0; box-sizing:border-box; font-family:'Roboto',sans-serif;}
@@ -105,7 +112,7 @@ footer {margin-top:auto; padding:1rem; font-size:0.9rem; color:#777;}
 <footer>NeonStar &copy; 2026</footer>
 
 <script>
-// Timer
+// --- Local Storage Setup ---
 let timer, isRunning=false, minutes=25, seconds=0;
 const startBtn=document.getElementById("start-btn");
 const pauseBtn=document.getElementById("pause-btn");
@@ -113,8 +120,13 @@ const resetBtn=document.getElementById("reset-btn");
 const timerText=document.getElementById("timer-text");
 const progressCircle=document.querySelector(".progress");
 
-// Stats & XP
-let focusScore=0, xp=0, level=1, streak=0, dailyGoal=0, weeklyGoal=0;
+let focusScore = parseInt(localStorage.getItem("xp")) || 0;
+let xp = focusScore;
+let level = parseInt(localStorage.getItem("level")) || 1;
+let streak = parseInt(localStorage.getItem("streak")) || 0;
+let dailyGoal = parseInt(localStorage.getItem("dailyGoal")) || 0;
+let weeklyGoal = parseInt(localStorage.getItem("weeklyGoal")) || 0;
+
 const focusScoreEl=document.getElementById("xp");
 const levelEl=document.getElementById("level");
 const streakEl=document.getElementById("streak");
@@ -122,14 +134,15 @@ const xpBar=document.getElementById("xp-bar");
 const goalBar=document.getElementById("goal-bar");
 const weeklyBar=document.getElementById("weekly-bar");
 
-let totalSeconds=minutes*60;
+let totalSeconds = minutes*60;
 
-// Timer Functions
+// --- Timer Functions ---
 function updateTimer(){
     timerText.textContent=(minutes<10?'0':'')+minutes+":"+(seconds<10?'0':'')+seconds;
     let progress=(minutes*60+seconds)/totalSeconds;
     progressCircle.style.strokeDashoffset=(565.48*(1-progress));
 }
+
 function countdown(){
     if(seconds===0){
         if(minutes===0){
@@ -137,44 +150,75 @@ function countdown(){
             isRunning=false;
             handleSessionComplete();
             return;
-        }else{ minutes--; seconds=59; }
+        } else { minutes--; seconds=59; }
     } else { seconds--; }
     updateTimer();
 }
+
 startBtn.addEventListener("click",()=>{if(!isRunning){isRunning=true;timer=setInterval(countdown,1000);}});
 pauseBtn.addEventListener("click",()=>{isRunning=false;clearInterval(timer);});
 resetBtn.addEventListener("click",()=>{isRunning=false;clearInterval(timer); minutes=25; seconds=0; updateTimer();});
+
 function handleSessionComplete(){
     focusScore++; streak++; xp+=20; dailyGoal+=20; weeklyGoal+=20;
-    if(xp>=100){level++; xp=0;}
+    if(xp>=100){ level++; xp=0; }
     focusScoreEl.textContent=xp;
     levelEl.textContent=level;
     streakEl.textContent=streak;
-    xpBar.style.width=xp+"%";
-    goalBar.style.width=Math.min(dailyGoal,100)+"%";
-    weeklyBar.style.width=Math.min(weeklyGoal,100)+"%";
+    xpBar.style.width = xp+"%";
+    goalBar.style.width = Math.min(dailyGoal,100)+"%";
+    weeklyBar.style.width = Math.min(weeklyGoal,100)+"%";
+
+    // Save to localStorage
+    localStorage.setItem("xp", xp);
+    localStorage.setItem("level", level);
+    localStorage.setItem("streak", streak);
+    localStorage.setItem("dailyGoal", dailyGoal);
+    localStorage.setItem("weeklyGoal", weeklyGoal);
+
     resetTimer();
     launchConfetti();
 }
+
 function resetTimer(){ minutes=25; seconds=0; totalSeconds=25*60; updateTimer(); }
 
-// Task Planner
+// --- Task Planner ---
 const taskForm=document.getElementById("task-form");
 const taskInput=document.getElementById("task-input");
 const taskList=document.getElementById("task-list");
+
+// Load saved tasks
+let savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+savedTasks.forEach(task => addTaskToDOM(task));
+
 taskForm.addEventListener("submit",(e)=>{
     e.preventDefault();
-    const text=taskInput.value.trim(); if(!text) return;
-    const li=document.createElement("li");
-    li.textContent=text;
-    const deleteBtn=document.createElement("button");
-    deleteBtn.textContent="×";
-    deleteBtn.onclick=()=>taskList.removeChild(li);
-    li.appendChild(deleteBtn);
-    taskList.appendChild(li);
+    const text = taskInput.value.trim();
+    if(!text) return;
+    addTaskToDOM(text);
+    taskInput.value = "";
+    saveTasks();
 });
 
-// Confetti
+function addTaskToDOM(text){
+    const li=document.createElement("li");
+    li.textContent = text;
+    const deleteBtn=document.createElement("button");
+    deleteBtn.textContent="×";
+    deleteBtn.onclick=()=>{ taskList.removeChild(li); saveTasks(); }
+    li.appendChild(deleteBtn);
+    taskList.appendChild(li);
+}
+
+function saveTasks(){
+    const tasks=[];
+    document.querySelectorAll("#task-list li").forEach(li=>{
+        tasks.push(li.firstChild.textContent);
+    });
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
+// --- Confetti ---
 const canvas=document.getElementById("confetti");
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 const ctx=canvas.getContext("2d");
@@ -183,6 +227,13 @@ function createConfetti(){ for(let i=0;i<100;i++){ confettiPieces.push({x:Math.r
 function drawConfetti(){ ctx.clearRect(0,0,canvas.width,canvas.height); confettiPieces.forEach(p=>{ ctx.beginPath(); ctx.lineWidth=p.r/2; ctx.strokeStyle=p.color; ctx.moveTo(p.x+p.tilt+p.r/4,p.y); ctx.lineTo(p.x+p.tilt,p.y+p.tilt+5); ctx.stroke(); p.tiltAngle+=p.tiltAngleIncrement; p.y+=Math.cos(p.d)+1+p.r/2; p.x+=Math.sin(p.d); if(p.y>canvas.height){p.x=Math.random()*canvas.width;p.y=-10;} }); requestAnimationFrame(drawConfetti);}
 function launchConfetti(){ createConfetti(); drawConfetti(); }
 
+// --- Initialize Display ---
+focusScoreEl.textContent=xp;
+levelEl.textContent=level;
+streakEl.textContent=streak;
+xpBar.style.width = xp+"%";
+goalBar.style.width = Math.min(dailyGoal,100)+"%";
+weeklyBar.style.width = Math.min(weeklyGoal,100)+"%";
 updateTimer();
 </script>
 </body>
