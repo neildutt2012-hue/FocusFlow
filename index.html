@@ -38,11 +38,19 @@ button:hover {background:#3a3a3a; border-color:#888;}
 .progress-bar {width:80%; height:15px; background:#2a2a2a; border-radius:8px; margin:0.5rem auto; overflow:hidden;}
 .progress-bar-inner {height:100%; background:#00d4ff; width:0%; transition:width 0.5s;}
 
+/* Daily Goal & Weekly Stats */
+#goal-section, #weekly-stats {margin-top:1rem;}
+.stats-bar {width:80%; height:12px; background:#2a2a2a; border-radius:8px; margin:0.5rem auto; overflow:hidden;}
+.stats-bar-inner {height:100%; background:#00ffa5; width:0%; transition:width 0.5s;}
+
 /* Confetti */
 canvas {position:absolute; pointer-events:none; top:0; left:0; z-index:9999;}
 
 /* Footer */
 footer {margin-top:auto; padding:1rem; font-size:0.9rem; color:#777;}
+
+/* Responsive */
+@media(max-width:500px){#timer-ring{width:150px;height:150px;} #timer-text{font-size:1.6rem;}}
 </style>
 </head>
 <body>
@@ -67,8 +75,16 @@ footer {margin-top:auto; padding:1rem; font-size:0.9rem; color:#777;}
 <button id="reset-btn">Reset</button>
 </div>
 <div id="xp-section">
-<p>Level: <span id="level">1</span> | XP: <span id="xp">0</span></p>
+<p>Level: <span id="level">1</span> | XP: <span id="xp">0</span> | Streak: <span id="streak">0</span> days</p>
 <div class="progress-bar"><div class="progress-bar-inner" id="xp-bar"></div></div>
+</div>
+<div id="goal-section">
+<p>Daily Goal Progress</p>
+<div class="stats-bar"><div class="stats-bar-inner" id="goal-bar"></div></div>
+</div>
+<div id="weekly-stats">
+<p>Weekly Focus Stats</p>
+<div class="stats-bar"><div class="stats-bar-inner" id="weekly-bar"></div></div>
 </div>
 </section>
 
@@ -82,41 +98,36 @@ footer {margin-top:auto; padding:1rem; font-size:0.9rem; color:#777;}
 <ul id="task-list"></ul>
 </section>
 
-<!-- Focus Stats -->
-<section id="score-section" class="glass-card">
-<h2>Focus Stats</h2>
-<p>Completed Sessions: <span id="focus-score">0</span></p>
-<p>Longest Streak: <span id="streak">0</span> days</p>
-</section>
-
 <canvas id="confetti"></canvas>
+
 <footer>NeonStar &copy; 2026</footer>
 
 <script>
-// Timer Variables
+// Timer
 let timer, isRunning=false, minutes=25, seconds=0;
 const startBtn=document.getElementById("start-btn");
 const pauseBtn=document.getElementById("pause-btn");
 const resetBtn=document.getElementById("reset-btn");
 const timerText=document.getElementById("timer-text");
 const progressCircle=document.querySelector(".progress");
-const focusScoreEl=document.getElementById("focus-score");
-const xpEl=document.getElementById("xp");
-const levelEl=document.getElementById("level");
-const xpBar=document.getElementById("xp-bar");
-const streakEl=document.getElementById("streak");
 
-let focusScore=0, xp=0, level=1, streak=0;
+// Stats & XP
+let focusScore=0, xp=0, level=1, streak=0, dailyGoal=0, weeklyGoal=0;
+const focusScoreEl=document.getElementById("xp");
+const levelEl=document.getElementById("level");
+const streakEl=document.getElementById("streak");
+const xpBar=document.getElementById("xp-bar");
+const goalBar=document.getElementById("goal-bar");
+const weeklyBar=document.getElementById("weekly-bar");
+
 let totalSeconds=minutes*60;
 
-// Update Timer Display & Circle
-function updateTimer() {
+// Timer Functions
+function updateTimer(){
     timerText.textContent=(minutes<10?'0':'')+minutes+":"+(seconds<10?'0':'')+seconds;
     let progress=(minutes*60+seconds)/totalSeconds;
     progressCircle.style.strokeDashoffset=(565.48*(1-progress));
 }
-
-// Timer Countdown
 function countdown(){
     if(seconds===0){
         if(minutes===0){
@@ -128,31 +139,21 @@ function countdown(){
     } else { seconds--; }
     updateTimer();
 }
-
-// Start/Pause/Reset
-startBtn.addEventListener("click",()=>{
-    if(!isRunning){isRunning=true; timer=setInterval(countdown,1000);}
-});
-pauseBtn.addEventListener("click",()=>{
-    isRunning=false; clearInterval(timer);
-});
-resetBtn.addEventListener("click",()=>{
-    isRunning=false; clearInterval(timer); minutes=25; seconds=0; updateTimer();
-});
-
-// Handle Session Complete
+startBtn.addEventListener("click",()=>{if(!isRunning){isRunning=true;timer=setInterval(countdown,1000);}});
+pauseBtn.addEventListener("click",()=>{isRunning=false;clearInterval(timer);});
+resetBtn.addEventListener("click",()=>{isRunning=false;clearInterval(timer); minutes=25; seconds=0; updateTimer();});
 function handleSessionComplete(){
-    focusScore++; streak++; xp+=20; // 20 XP per session
-    if(xp>=100){ level++; xp=0; }
-    focusScoreEl.textContent=focusScore;
-    xpEl.textContent=xp;
+    focusScore++; streak++; xp+=20; dailyGoal+=20; weeklyGoal+=20;
+    if(xp>=100){level++; xp=0;}
+    focusScoreEl.textContent=xp;
     levelEl.textContent=level;
     streakEl.textContent=streak;
     xpBar.style.width=xp+"%";
+    goalBar.style.width=Math.min(dailyGoal,100)+"%";
+    weeklyBar.style.width=Math.min(weeklyGoal,100)+"%";
     resetTimer();
     launchConfetti();
 }
-
 function resetTimer(){ minutes=25; seconds=0; totalSeconds=25*60; updateTimer(); }
 
 // Task Planner
@@ -169,20 +170,19 @@ taskForm.addEventListener("submit",(e)=>{
     deleteBtn.onclick=()=>taskList.removeChild(li);
     li.appendChild(deleteBtn);
     taskList.appendChild(li);
-    taskInput.value="";
 });
 
 // Confetti
 const canvas=document.getElementById("confetti");
-canvas.width=window.innerWidth;
-canvas.height=window.innerHeight;
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
 const ctx=canvas.getContext("2d");
 let confettiPieces=[];
-function createConfetti(){ for(let i=0;i<100;i++){ confettiPieces.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*6+2, d:Math.random()*50, color:`hsl(${Math.random()*360},70%,60%)`, tilt:Math.random()*10-10, tiltAngleIncrement:Math.random()*0.07+0.05}); }}
-function drawConfetti(){ ctx.clearRect(0,0,canvas.width,canvas.height); confettiPieces.forEach(p=>{ ctx.beginPath(); ctx.lineWidth=p.r/2; ctx.strokeStyle=p.color; ctx.moveTo(p.x+p.tilt+p.r/4,p.y); ctx.lineTo(p.x+p.tilt,p.y+p.tilt+5); ctx.stroke(); p.tiltAngle+=p.tiltAngleIncrement; p.y+=Math.cos(p.d)+1+p.r/2; p.x+=Math.sin(p.d); if(p.y>canvas.height){p.x=Math.random()*canvas.width; p.y=-10; } }); requestAnimationFrame(drawConfetti);}
+function createConfetti(){ for(let i=0;i<100;i++){ confettiPieces.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*6+2, d:Math.random()*50, color:`hsl(${Math.random()*360},70%,60%)`, tilt:Math.random()*10-10, tiltAngleIncrement:Math.random()*0.07+0.05, tiltAngle:0});}}
+function drawConfetti(){ ctx.clearRect(0,0,canvas.width,canvas.height); confettiPieces.forEach(p=>{ ctx.beginPath(); ctx.lineWidth=p.r/2; ctx.strokeStyle=p.color; ctx.moveTo(p.x+p.tilt+p.r/4,p.y); ctx.lineTo(p.x+p.tilt,p.y+p.tilt+5); ctx.stroke(); p.tiltAngle+=p.tiltAngleIncrement; p.y+=Math.cos(p.d)+1+p.r/2; p.x+=Math.sin(p.d); if(p.y>canvas.height){p.x=Math.random()*canvas.width;p.y=-10;} }); requestAnimationFrame(drawConfetti);}
 function launchConfetti(){ createConfetti(); drawConfetti(); }
 
 updateTimer();
 </script>
 </body>
 </html>
+
