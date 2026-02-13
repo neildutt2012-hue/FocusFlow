@@ -3,238 +3,219 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Google Site Verification -->
-<meta name="google-site-verification" content="eUJgkTyjOwyYw3dpxvxVgqwI1Q5QYpY0n-eKOGdR86Y" />
-
-<!-- SEO Meta Tags -->
-<meta name="description" content="FocusFlow by NeonStar: Study timer, task planner, and gamified productivity app for students. Track focus, earn XP, build streaks, and master your time.">
-<meta name="keywords" content="FocusFlow, NeonStar, focus app, study timer, productivity, gamified productivity, task planner, student focus, XP, streaks, Pomodoro">
-
-<title>FocusFlow | NeonStar</title>
-<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-
+<title>ND Focus PWA</title>
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.json">
 <style>
-/* Reset & Body */
-* {margin:0; padding:0; box-sizing:border-box; font-family:'Roboto',sans-serif;}
-body {background:#1a1a1a; color:#e0e0e0; display:flex; flex-direction:column; min-height:100vh; text-align:center;}
-header {padding:2rem 1rem; background:#121212; border-bottom:1px solid #2a2a2a;}
-header h1 {font-weight:700; font-size:2.5rem; margin-bottom:0.3rem;}
-header p {color:#b0b0b0; font-weight:400;}
+/* -------------------- GLOBAL -------------------- */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #0a0a0a;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    text-align: center;
+}
+h1, h2 { margin: 10px 0; }
+h1 { color: #00c3ff; font-size: 36px; }
+h2 { color: #00ff99; }
+p { color: #ccc; }
 
-/* Glass Card */
-.glass-card {margin:2rem auto; padding:2rem; width:90%; max-width:500px; background:rgba(30,30,30,0.85); border-radius:12px; border:1px solid rgba(255,255,255,0.05); box-shadow:0 8px 20px rgba(0,0,0,0.4); backdrop-filter:blur(10px);}
+/* -------------------- ADD TO HOME SCREEN -------------------- */
+#addGuide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 20px;
+}
+.guide {
+    background: #111;
+    border: 1px solid #222;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-align: left;
+    max-width: 400px;
+}
+button {
+    margin-top: 20px;
+    padding: 12px 24px;
+    font-size: 18px;
+    background-color: #00c3ff;
+    color: black;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+button:hover { background-color: #00ff99; }
 
-/* Timer Ring */
-#timer-ring {position:relative; width:200px; height:200px; margin:1rem auto;}
-#timer-ring svg {transform:rotate(-90deg);}
-#timer-ring circle {fill:none; stroke-width:12; stroke:#555;}
-#timer-ring .progress {stroke:#00d4ff; stroke-linecap:round; transition:stroke-dashoffset 0.5s linear;}
-#timer-text {position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; font-weight:700;}
-
-/* Buttons */
-button {background-color:#2a2a2a; color:#e0e0e0; border:1px solid #555; padding:0.6rem 1.2rem; margin:0.5rem; font-size:1rem; cursor:pointer; border-radius:8px; transition:all 0.2s;}
-button:hover {background:#3a3a3a; border-color:#888;}
-
-/* Task Planner */
-#task-form input {padding:0.5rem; font-size:1rem; width:65%; max-width:300px; border-radius:8px; border:1px solid #555; background:#2a2a2a; color:#e0e0e0;}
-#task-list {margin-top:1rem; list-style:none;}
-#task-list li {background:#2a2a2a; margin:0.5rem auto; padding:0.7rem 1rem; width:80%; max-width:400px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;}
-#task-list li button {border:none; background:none; color:#ff5c5c; font-weight:bold; cursor:pointer; font-size:1rem;}
-
-/* XP, Levels & Progress */
-#xp-section {margin-top:1rem;}
-.progress-bar {width:80%; height:15px; background:#2a2a2a; border-radius:8px; margin:0.5rem auto; overflow:hidden;}
-.progress-bar-inner {height:100%; background:#00d4ff; width:0%; transition:width 0.5s;}
-
-/* Daily Goal & Weekly Stats */
-#goal-section, #weekly-stats {margin-top:1rem;}
-.stats-bar {width:80%; height:12px; background:#2a2a2a; border-radius:8px; margin:0.5rem auto; overflow:hidden;}
-.stats-bar-inner {height:100%; background:#00ffa5; width:0%; transition:width 0.5s;}
-
-/* Confetti */
-canvas {position:absolute; pointer-events:none; top:0; left:0; z-index:9999;}
-
-/* Footer */
-footer {margin-top:auto; padding:1rem; font-size:0.9rem; color:#777;}
-
-/* Responsive */
-@media(max-width:500px){#timer-ring{width:150px;height:150px;} #timer-text{font-size:1.6rem;}}
+/* -------------------- APP -------------------- */
+#app {
+    display: none;
+    flex: 1;
+    padding: 20px;
+}
+#timerDisplay {
+    font-size: 48px;
+    margin: 20px 0;
+    color: #00ff99;
+}
+#tasks input {
+    padding: 8px;
+    width: 70%;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    border: none;
+}
+#tasks button {
+    margin-left: 5px;
+}
+.taskItem {
+    background: #111;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+#analytics {
+    margin-top: 30px;
+    background: #111;
+    padding: 20px;
+    border-radius: 8px;
+}
 </style>
 </head>
 <body>
-<header>
-<h1>FocusFlow</h1>
-<p>Master your focus. Own your time.</p>
-</header>
 
-<!-- Timer -->
-<section id="timer-section" class="glass-card">
-<h2>Study Timer</h2>
-<div id="timer-ring">
-<svg width="200" height="200">
-<circle cx="100" cy="100" r="90"/>
-<circle cx="100" cy="100" r="90" class="progress" stroke-dasharray="565.48" stroke-dashoffset="565.48"/>
-</svg>
-<div id="timer-text">25:00</div>
+<!-- ---------- ADD TO HOME SCREEN ---------- -->
+<div id="addGuide">
+    <h1>Welcome to ND Focus</h1>
+    <p>Before using this app, <strong>add it to your Home Screen</strong> for the best experience.</p>
+    <div class="guide">
+        <h2>How to Add to Home Screen</h2>
+        <p><strong>iPhone (Safari):</strong> Tap the Share button → Add to Home Screen → Confirm.</p>
+        <p><strong>Android (Chrome):</strong> Tap the three dots → Add to Home Screen → Confirm.</p>
+    </div>
+    <button onclick="startApp()">I Added It!</button>
 </div>
-<div class="buttons">
-<button id="start-btn">Start</button>
-<button id="pause-btn">Pause</button>
-<button id="reset-btn">Reset</button>
-</div>
-<div id="xp-section">
-<p>Level: <span id="level">1</span> | XP: <span id="xp">0</span> | Streak: <span id="streak">0</span> days</p>
-<div class="progress-bar"><div class="progress-bar-inner" id="xp-bar"></div></div>
-</div>
-<div id="goal-section">
-<p>Daily Goal Progress</p>
-<div class="stats-bar"><div class="stats-bar-inner" id="goal-bar"></div></div>
-</div>
-<div id="weekly-stats">
-<p>Weekly Focus Stats</p>
-<div class="stats-bar"><div class="stats-bar-inner" id="weekly-bar"></div></div>
-</div>
-</section>
 
-<!-- Task Planner -->
-<section id="tasks-section" class="glass-card">
-<h2>Daily Task Planner</h2>
-<form id="task-form">
-<input type="text" id="task-input" placeholder="Enter task" required>
-<button type="submit">Add Task</button>
-</form>
-<ul id="task-list"></ul>
-</section>
+<!-- ---------- MAIN APP ---------- -->
+<div id="app">
+    <h1>ND Focus</h1>
+    <h2>Pomodoro Timer</h2>
+    <div id="timerDisplay">25:00</div>
+    <button onclick="startTimer()">Start</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button onclick="resetTimer()">Reset</button>
 
-<canvas id="confetti"></canvas>
+    <h2>Tasks</h2>
+    <div id="tasks">
+        <input type="text" id="taskInput" placeholder="Add new task">
+        <button onclick="addTask()">Add</button>
+        <div id="taskList"></div>
+    </div>
 
-<footer>NeonStar &copy; 2026</footer>
+    <h2>Analytics</h2>
+    <div id="analytics">
+        <p>Total Focus Time: <span id="totalFocus">0</span> min</p>
+        <p>Completed Tasks: <span id="totalTasks">0</span></p>
+        <p>Current Streak: <span id="streak">0</span> days</p>
+    </div>
+</div>
 
 <script>
-// --- Local Storage Setup ---
-let timer, isRunning=false, minutes=25, seconds=0;
-const startBtn=document.getElementById("start-btn");
-const pauseBtn=document.getElementById("pause-btn");
-const resetBtn=document.getElementById("reset-btn");
-const timerText=document.getElementById("timer-text");
-const progressCircle=document.querySelector(".progress");
-
-let focusScore = parseInt(localStorage.getItem("xp")) || 0;
-let xp = focusScore;
-let level = parseInt(localStorage.getItem("level")) || 1;
-let streak = parseInt(localStorage.getItem("streak")) || 0;
-let dailyGoal = parseInt(localStorage.getItem("dailyGoal")) || 0;
-let weeklyGoal = parseInt(localStorage.getItem("weeklyGoal")) || 0;
-
-const focusScoreEl=document.getElementById("xp");
-const levelEl=document.getElementById("level");
-const streakEl=document.getElementById("streak");
-const xpBar=document.getElementById("xp-bar");
-const goalBar=document.getElementById("goal-bar");
-const weeklyBar=document.getElementById("weekly-bar");
-
-let totalSeconds = minutes*60;
-
-// --- Timer Functions ---
-function updateTimer(){
-    timerText.textContent=(minutes<10?'0':'')+minutes+":"+(seconds<10?'0':'')+seconds;
-    let progress=(minutes*60+seconds)/totalSeconds;
-    progressCircle.style.strokeDashoffset=(565.48*(1-progress));
+/* -------------------- ADD TO HOME SCREEN -------------------- */
+function startApp() {
+    document.getElementById('addGuide').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
 }
 
-function countdown(){
-    if(seconds===0){
-        if(minutes===0){
-            clearInterval(timer);
-            isRunning=false;
-            handleSessionComplete();
-            return;
-        } else { minutes--; seconds=59; }
-    } else { seconds--; }
-    updateTimer();
+/* -------------------- TIMER -------------------- */
+let timer = 25*60;
+let interval;
+let totalFocusTime = 0;
+let isRunning = false;
+
+function updateTimerDisplay() {
+    let minutes = Math.floor(timer/60);
+    let seconds = timer % 60;
+    document.getElementById('timerDisplay').textContent = 
+        `${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
 }
 
-startBtn.addEventListener("click",()=>{if(!isRunning){isRunning=true;timer=setInterval(countdown,1000);}});
-pauseBtn.addEventListener("click",()=>{isRunning=false;clearInterval(timer);});
-resetBtn.addEventListener("click",()=>{isRunning=false;clearInterval(timer); minutes=25; seconds=0; updateTimer();});
-
-function handleSessionComplete(){
-    focusScore++; streak++; xp+=20; dailyGoal+=20; weeklyGoal+=20;
-    if(xp>=100){ level++; xp=0; }
-    focusScoreEl.textContent=xp;
-    levelEl.textContent=level;
-    streakEl.textContent=streak;
-    xpBar.style.width = xp+"%";
-    goalBar.style.width = Math.min(dailyGoal,100)+"%";
-    weeklyBar.style.width = Math.min(weeklyGoal,100)+"%";
-
-    // Save to localStorage
-    localStorage.setItem("xp", xp);
-    localStorage.setItem("level", level);
-    localStorage.setItem("streak", streak);
-    localStorage.setItem("dailyGoal", dailyGoal);
-    localStorage.setItem("weeklyGoal", weeklyGoal);
-
-    resetTimer();
-    launchConfetti();
+function startTimer() {
+    if(isRunning) return;
+    isRunning = true;
+    interval = setInterval(() => {
+        if(timer > 0) {
+            timer--;
+            updateTimerDisplay();
+        } else {
+            clearInterval(interval);
+            isRunning = false;
+            totalFocusTime += 25;
+            updateAnalytics();
+            alert("Session Complete! 🔥 ND Style");
+            timer = 25*60;
+            updateTimerDisplay();
+        }
+    }, 1000);
 }
 
-function resetTimer(){ minutes=25; seconds=0; totalSeconds=25*60; updateTimer(); }
-
-// --- Task Planner ---
-const taskForm=document.getElementById("task-form");
-const taskInput=document.getElementById("task-input");
-const taskList=document.getElementById("task-list");
-
-// Load saved tasks
-let savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
-savedTasks.forEach(task => addTaskToDOM(task));
-
-taskForm.addEventListener("submit",(e)=>{
-    e.preventDefault();
-    const text = taskInput.value.trim();
-    if(!text) return;
-    addTaskToDOM(text);
-    taskInput.value = "";
-    saveTasks();
-});
-
-function addTaskToDOM(text){
-    const li=document.createElement("li");
-    li.textContent = text;
-    const deleteBtn=document.createElement("button");
-    deleteBtn.textContent="×";
-    deleteBtn.onclick=()=>{ taskList.removeChild(li); saveTasks(); }
-    li.appendChild(deleteBtn);
-    taskList.appendChild(li);
+function pauseTimer() {
+    clearInterval(interval);
+    isRunning = false;
 }
 
-function saveTasks(){
-    const tasks=[];
-    document.querySelectorAll("#task-list li").forEach(li=>{
-        tasks.push(li.firstChild.textContent);
-    });
-    localStorage.setItem("tasks", JSON.stringify(tasks));
+function resetTimer() {
+    clearInterval(interval);
+    timer = 25*60;
+    isRunning = false;
+    updateTimerDisplay();
 }
 
-// --- Confetti ---
-const canvas=document.getElementById("confetti");
-canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-const ctx=canvas.getContext("2d");
-let confettiPieces=[];
-function createConfetti(){ for(let i=0;i<100;i++){ confettiPieces.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, r:Math.random()*6+2, d:Math.random()*50, color:`hsl(${Math.random()*360},70%,60%)`, tilt:Math.random()*10-10, tiltAngleIncrement:Math.random()*0.07+0.05, tiltAngle:0});}}
-function drawConfetti(){ ctx.clearRect(0,0,canvas.width,canvas.height); confettiPieces.forEach(p=>{ ctx.beginPath(); ctx.lineWidth=p.r/2; ctx.strokeStyle=p.color; ctx.moveTo(p.x+p.tilt+p.r/4,p.y); ctx.lineTo(p.x+p.tilt,p.y+p.tilt+5); ctx.stroke(); p.tiltAngle+=p.tiltAngleIncrement; p.y+=Math.cos(p.d)+1+p.r/2; p.x+=Math.sin(p.d); if(p.y>canvas.height){p.x=Math.random()*canvas.width;p.y=-10;} }); requestAnimationFrame(drawConfetti);}
-function launchConfetti(){ createConfetti(); drawConfetti(); }
+/* -------------------- TASKS -------------------- */
+let totalTasks = 0;
+let streak = 0;
+let taskListDiv = document.getElementById('taskList');
 
-// --- Initialize Display ---
-focusScoreEl.textContent=xp;
-levelEl.textContent=level;
-streakEl.textContent=streak;
-xpBar.style.width = xp+"%";
-goalBar.style.width = Math.min(dailyGoal,100)+"%";
-weeklyBar.style.width = Math.min(weeklyGoal,100)+"%";
-updateTimer();
+function addTask() {
+    let taskInput = document.getElementById('taskInput');
+    let task = taskInput.value.trim();
+    if(!task) return;
+    totalTasks++;
+    let div = document.createElement('div');
+    div.className = 'taskItem';
+    div.innerHTML = `<span>${task}</span> <button onclick="completeTask(this)">✔</button>`;
+    taskListDiv.appendChild(div);
+    taskInput.value = '';
+    updateAnalytics();
+}
+
+function completeTask(btn) {
+    btn.parentElement.remove();
+    streak++;
+    updateAnalytics();
+}
+
+/* -------------------- ANALYTICS -------------------- */
+function updateAnalytics() {
+    document.getElementById('totalFocus').textContent = totalFocusTime;
+    document.getElementById('totalTasks').textContent = totalTasks;
+    document.getElementById('streak').textContent = streak;
+}
+
+/* Initialize display */
+updateTimerDisplay();
+updateAnalytics();
 </script>
+
 </body>
 </html>
